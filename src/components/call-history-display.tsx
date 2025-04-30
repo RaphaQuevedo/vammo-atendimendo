@@ -13,10 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Badge } from "@/components/ui/badge"; // Import Badge
+import { Badge } from "@/components/ui/badge";
 
 interface CallHistoryDisplayProps {
   calledTickets: Ticket[];
@@ -35,15 +35,13 @@ export function CallHistoryDisplay({ calledTickets }: CallHistoryDisplayProps) {
 
 
   return (
-    <Card className="w-full shadow-lg bg-card">
-      <CardHeader>
-        <CardTitle className="text-center text-primary">Histórico de Chamadas</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* Set a fixed height and make it scrollable */}
-        <ScrollArea className="h-[400px] w-full rounded-md border">
+    // Card removed from here, will be part of the parent layout
+    <div className="w-full">
+        <h3 className="text-lg font-semibold text-center text-primary mb-4">Histórico de Chamadas Recentes</h3>
+        {/* Set a max-height and make it scrollable */}
+        <ScrollArea className="h-[350px] max-h-[350px] w-full rounded-md border"> {/* Adjusted height */}
           <Table>
-            <TableHeader className="sticky top-0 bg-card z-10"> {/* Make header sticky */}
+            <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
                 <TableHead className="w-[80px]">Senha</TableHead>
                 <TableHead>Nome</TableHead>
@@ -76,13 +74,12 @@ export function CallHistoryDisplay({ calledTickets }: CallHistoryDisplayProps) {
               )}
             </TableBody>
              {calledTickets.length > 0 && (
-                 <TableCaption className="sticky bottom-0 bg-card z-10 py-2"> {/* Make caption sticky */}
+                 <TableCaption className="sticky bottom-0 bg-card z-10 py-2">
                     Histórico das últimas senhas chamadas.
                  </TableCaption>
              )}
           </Table>
         </ScrollArea>
-      </CardContent>
-    </Card>
+    </div>
   );
 }

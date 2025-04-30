@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TicketIcon, User, List } from "lucide-react"; // Keep User icon, List might be removed if not used elsewhere
+import { TicketIcon, User } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -14,7 +14,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/card"; // Keep Card imports if used internally, otherwise remove if only used for layout in page.tsx
 import {
   Form,
   FormControl,
@@ -24,10 +24,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Import RadioGroup components
-import { Label } from "@/components/ui/label"; // Import Label for RadioGroup items
-import { useToast } from "@/hooks/use-toast";
-import { SERVICE_TYPES, type ServiceType, type Ticket } from "@/types/ticket"; // Import types
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+// import { useToast } from "@/hooks/use-toast"; // Removed useToast import
+import { SERVICE_TYPES, type ServiceType, type Ticket } from "@/types/ticket";
 
 // Define Zod schema for form validation
 const ticketFormSchema = z.object({
@@ -39,11 +39,11 @@ const ticketFormSchema = z.object({
 export type TicketFormData = z.infer<typeof ticketFormSchema>;
 
 interface TicketGeneratorProps {
-  onGenerateTicket: (formData: TicketFormData) => Ticket;
+  onGenerateTicket: (formData: TicketFormData) => Ticket; // Changed to return Ticket
 }
 
 export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Removed toast initialization
   const form = useForm<TicketFormData>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: {
@@ -54,27 +54,12 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
   });
 
   const onSubmit = (data: TicketFormData) => {
-    const newTicket = onGenerateTicket(data);
-    toast({
-      title: "Senha Gerada com Sucesso!",
-      description: (
-        <div>
-          <p>Senha: {newTicket.number}</p>
-          <p>Nome: {newTicket.firstName} {newTicket.lastName}</p>
-          <p>Atendimento: {newTicket.serviceType}</p>
-        </div>
-      ),
-    });
+    onGenerateTicket(data); // Call the handler, which now handles the toast
     form.reset(); // Reset form after submission
   };
 
+  // Removed Card wrapper from here, it will be handled in page.tsx
   return (
-    <Card className="w-full shadow-lg col-span-1 lg:col-span-2 bg-card">
-      <CardHeader className="text-center">
-        <CardTitle className="text-primary">Gerar Nova Senha</CardTitle>
-        <CardDescription>Preencha seus dados e selecione o tipo de atendimento.</CardDescription>
-      </CardHeader>
-      <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,7 +137,5 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
             </div>
           </form>
         </Form>
-      </CardContent>
-    </Card>
   );
 }

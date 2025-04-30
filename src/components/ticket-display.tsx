@@ -2,12 +2,12 @@
 "use client";
 
 import type * as React from "react";
-import type { Ticket } from "@/types/ticket"; // Import the Ticket type
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Ticket } from "@/types/ticket";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Keep if needed internally, otherwise remove
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge"; // Import Badge
-import { format } from 'date-fns'; // Import date-fns for formatting
-import { ptBR } from 'date-fns/locale'; // Import pt-BR locale
+import { Badge } from "@/components/ui/badge";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface TicketDisplayProps {
   currentTicket: Ticket | null;
@@ -19,22 +19,21 @@ export function TicketDisplay({ currentTicket, upcomingTickets }: TicketDisplayP
     switch (serviceType) {
       case 'Agendamento': return 'default';
       case 'Manutenção': return 'secondary';
-      case 'Vendas': return 'destructive'; // Example variant, adjust as needed
+      case 'Vendas': return 'destructive';
       default: return 'outline';
     }
   };
 
   return (
-    <Card className="w-full text-center shadow-lg bg-card min-h-[350px]"> {/* Added min-height */}
-      <CardHeader>
-        <CardTitle className="text-primary">Atendimento Atual</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col justify-between h-full">
+    // Card removed from here, handled by parent layout
+    <div className="w-full text-center min-h-[350px] flex flex-col justify-between p-6 border rounded-lg bg-card shadow-sm">
+      <div>
+        <h3 className="text-xl font-semibold text-primary mb-4">Atendimento Atual</h3>
         {/* Current Ticket Info */}
         <div className="mb-6 flex-grow flex flex-col items-center justify-center">
-          <p className="text-sm text-muted-foreground mb-1">Senha Atual</p>
+          <p className="text-sm text-muted-foreground mb-1">Senha Atual Sendo Atendida</p>
           <p
-            className="text-7xl font-bold text-accent" // Increased size
+            className="text-7xl font-bold text-accent my-2" // Added margin
             aria-live="polite"
             aria-atomic="true"
           >
@@ -57,35 +56,35 @@ export function TicketDisplay({ currentTicket, upcomingTickets }: TicketDisplayP
           )}
            {!currentTicket && <p className="mt-4 text-muted-foreground">Aguardando próximo chamado...</p>}
         </div>
+      </div>
 
-        <Separator className="my-4" />
+      <Separator className="my-4" />
 
-        {/* Upcoming Tickets */}
-        <div>
-          <p className="text-sm text-muted-foreground mb-2">Próximas Senhas</p>
-          {upcomingTickets.length > 0 ? (
-            <div className="flex justify-center space-x-4 text-xl font-medium text-foreground">
-              {upcomingTickets.map((ticket) => (
-                <span
-                  key={ticket.number}
-                  className="p-2 bg-secondary rounded-md shadow-sm min-w-[40px]" // Changed background
-                >
-                  {ticket.number}
-                </span>
-              ))}
-               {upcomingTickets.length < 3 && Array(3 - upcomingTickets.length).fill(0).map((_, index) => (
-                  <span key={`placeholder-${index}`} className="p-2 text-secondary rounded-md min-w-[40px]"> - </span>
-              ))}
-            </div>
-          ) : (
-             <div className="flex justify-center space-x-4 text-xl font-medium text-muted-foreground">
-                 <span className="p-2 min-w-[40px]"> - </span>
-                 <span className="p-2 min-w-[40px]"> - </span>
-                 <span className="p-2 min-w-[40px]"> - </span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      {/* Upcoming Tickets */}
+      <div>
+        <p className="text-sm text-muted-foreground mb-2">Próximas Senhas na Fila</p>
+        {upcomingTickets.length > 0 ? (
+          <div className="flex justify-center space-x-4 text-xl font-medium text-foreground">
+            {upcomingTickets.map((ticket) => (
+              <span
+                key={ticket.number}
+                className="p-2 bg-secondary rounded-md shadow-sm min-w-[40px]"
+              >
+                {ticket.number}
+              </span>
+            ))}
+             {upcomingTickets.length < 3 && Array(3 - upcomingTickets.length).fill(0).map((_, index) => (
+                <span key={`placeholder-${index}`} className="p-2 text-secondary rounded-md min-w-[40px]"> - </span>
+            ))}
+          </div>
+        ) : (
+           <div className="flex justify-center space-x-4 text-xl font-medium text-muted-foreground">
+               <span className="p-2 min-w-[40px]"> - </span>
+               <span className="p-2 min-w-[40px]"> - </span>
+               <span className="p-2 min-w-[40px]"> - </span>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
