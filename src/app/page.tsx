@@ -46,43 +46,53 @@ export default function Home() {
   };
 
 
-  const playNotificationSound = () => {
-    if (audioRef.current) {
-      // Ensure the audio is loaded before playing, reset playback position
-      audioRef.current.load(); // Reload or ensure it's loaded
-      audioRef.current.currentTime = 0; // Reset to start
-      console.log("Attempting to play notification sound..."); // Log attempt
-
-      audioRef.current.play()
-        .then(() => {
-            console.log("Notification sound played successfully."); // Log success
-        })
-        .catch(error => {
-            console.error("Error playing notification sound:", error); // Log the actual error
-            let description = "Não foi possível tocar o som de notificação. Verifique o console para detalhes.";
-             // Check common error types for more specific user feedback
-            if (error.name === 'NotAllowedError') {
-                 console.error("Autoplay was prevented. Ensure this was triggered by user interaction.");
-                 description = "O navegador impediu a reprodução automática do som. A interação do usuário pode ser necessária.";
-            } else if (error.name === 'NotSupportedError') {
-                 console.error("The audio format may not be supported or the source is invalid.");
-                 description = "Formato de áudio não suportado ou arquivo '/sounds/notification.mp3' inválido/não encontrado na pasta 'public'.";
-            }
-             toast({
-                variant: "destructive",
-                title: "Erro de Áudio",
-                description: description,
-             });
-      });
-    } else {
-        console.error("Audio ref is not available or audio element not mounted."); // Log if ref is null
-        toast({
+ const playNotificationSound = () => {
+  if (audioRef.current) {
+    audioRef.current.load(); // Ensure the latest audio data is loaded (useful if src changes, though unlikely here)
+    audioRef.current.currentTime = 0; // Reset playback to the beginning
+    try {
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.error("Error during audio play:", error);
+          let description = "Erro ao reproduzir o som. Verifique o console para detalhes.";
+          if (error.name === 'NotAllowedError') {
+            console.error("Autoplay was prevented by the browser.");
+            description = "A reprodução automática foi bloqueada pelo navegador. Interação do usuário necessária.";
+          } else if (error.name === 'NotSupportedError') {
+            console.error("The audio format may not be supported or the resource could be invalid.");
+            description = "Formato de áudio não suportado ou o recurso '/sounds/notification.mp3' está inacessível.";
+          } else {
+              description = `Erro ao reproduzir som de notificação: ${error.message}`;
+          }
+          toast({
             variant: "destructive",
-            title: "Erro de Áudio",
-            description: "Referência de áudio não encontrada. O elemento de áudio pode não ter sido carregado.",
+            title: "Erro de Reprodução de Som",
+            description: description,
+          });
+        }).then(() => {
+          // Optional: Code to run after successful playback (or after handling catch)
+          // console.log("Notification sound played successfully or error handled.");
         });
+      }
+    } catch (error: any) { // Catch any synchronous errors during the play attempt setup
+      console.error("Unexpected error setting up audio playback:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro Inesperado de Áudio",
+        description: `Ocorreu um erro inesperado ao tentar tocar o som. Detalhes: ${error.message || error}`,
+      });
     }
-  };
+  } else { // This else corresponds to 'if (audioRef.current)'
+    console.error("Audio ref is not available or audio element not mounted."); // Log if ref is null
+    toast({
+      variant: "destructive",
+      title: "Erro de Áudio",
+      description: "Referência de áudio não encontrada. O elemento de áudio pode não ter sido carregado.",
+    });
+  }
+};
+
 
   // Updated to accept deskNumber
   const handleNextTicket = (deskNumber: number) => {
