@@ -36,7 +36,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-12 lg:p-24 bg-secondary">
       <div className="w-full max-w-4xl space-y-8">
         <h1 className="text-4xl font-bold text-center text-primary mb-12">
-          SenhaFácil - Sistema de Atendimento
+          Vammo - Sistema de Atendimento
         </h1>
 
         {/* Ticket Display Section */}

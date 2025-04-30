@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'SenhaFácil - Atendimento por Senhas',
+  title: 'Vammo - Atendimento por Senhas',
   description: 'Sistema de gerenciamento de senhas para atendimento.',
 };
 
