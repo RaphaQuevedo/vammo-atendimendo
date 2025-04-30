@@ -9,13 +9,6 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"; // Keep Card imports if used internally, otherwise remove if only used for layout in page.tsx
-import {
   Form,
   FormControl,
   FormField,
@@ -26,8 +19,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-// import { useToast } from "@/hooks/use-toast"; // Removed useToast import
 import { SERVICE_TYPES, type ServiceType, type Ticket } from "@/types/ticket";
+import { cn } from "@/lib/utils"; // Import cn for conditional classes
 
 // Define Zod schema for form validation
 const ticketFormSchema = z.object({
@@ -43,7 +36,6 @@ interface TicketGeneratorProps {
 }
 
 export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
-  // const { toast } = useToast(); // Removed toast initialization
   const form = useForm<TicketFormData>({
     resolver: zodResolver(ticketFormSchema),
     defaultValues: {
@@ -58,7 +50,6 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
     form.reset(); // Reset form after submission
   };
 
-  // Removed Card wrapper from here, it will be handled in page.tsx
   return (
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -105,17 +96,25 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4" // Arrange buttons horizontally on medium screens and up
+                      value={field.value} // Use value instead of defaultValue for controlled component
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-4" // Arrange buttons in a grid
                     >
                       {SERVICE_TYPES.map((type) => (
-                        <FormItem key={type} className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value={type} id={`service-${type}`} />
-                          </FormControl>
-                          <Label htmlFor={`service-${type}`} className="font-normal cursor-pointer">
-                            {type}
-                          </Label>
+                        <FormItem key={type} className="flex items-center space-x-0">
+                           {/* Hide the actual radio input */}
+                           <FormControl>
+                                <RadioGroupItem value={type} id={`service-${type}`} className="sr-only" />
+                            </FormControl>
+                            {/* Style the label as a button */}
+                           <Label
+                             htmlFor={`service-${type}`}
+                             className={cn(
+                               "flex-1 cursor-pointer rounded-md border-2 border-muted bg-popover p-4 text-center font-medium hover:bg-accent hover:text-accent-foreground transition-colors",
+                               field.value === type && "border-primary bg-primary text-primary-foreground hover:bg-primary/90" // Style for selected item
+                             )}
+                           >
+                             {type}
+                           </Label>
                         </FormItem>
                       ))}
                     </RadioGroup>
