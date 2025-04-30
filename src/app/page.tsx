@@ -9,13 +9,14 @@ import { CallHistoryDisplay } from "@/components/call-history-display";
 import type { Ticket } from "@/types/ticket";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"; // Import Card components
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   const [lastGeneratedTicket, setLastGeneratedTicket] = React.useState<number>(0);
   const [currentTicket, setCurrentTicket] = React.useState<Ticket | null>(null);
   const [ticketQueue, setTicketQueue] = React.useState<Ticket[]>([]);
   const [calledTickets, setCalledTickets] = React.useState<Ticket[]>([]);
+  const [selectedDesk, setSelectedDesk] = React.useState<number | null>(null); // State for selected desk
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
@@ -58,12 +59,18 @@ export default function Home() {
     }
   };
 
-  const handleNextTicket = () => {
+  // Updated to accept deskNumber
+  const handleNextTicket = (deskNumber: number) => {
     if (ticketQueue.length > 0) {
       setTicketQueue((prevQueue) => {
         const [nextTicketToCall, ...remainingQueue] = prevQueue;
         const calledTime = new Date();
-        const updatedTicket = { ...nextTicketToCall, callTimestamp: calledTime };
+        // Include deskNumber when updating the ticket
+        const updatedTicket = {
+            ...nextTicketToCall,
+            callTimestamp: calledTime,
+            deskNumber: deskNumber // Assign desk number
+        };
 
         setCurrentTicket(updatedTicket);
         setCalledTickets((prevHistory) => [updatedTicket, ...prevHistory]);
@@ -71,7 +78,7 @@ export default function Home() {
          // Display toast confirmation for the called ticket
         toast({
           title: "Senha Chamada",
-          description: `Senha ${updatedTicket.number} (${updatedTicket.firstName} ${updatedTicket.lastName}) chamada.`,
+          description: `Senha ${updatedTicket.number} (${updatedTicket.firstName} ${updatedTicket.lastName}) chamada para o Guichê ${deskNumber}.`,
         });
         return remainingQueue;
       });
@@ -120,8 +127,10 @@ export default function Home() {
                     {/* Ticket Management Section (Call Next) */}
                     <div className="md:col-span-1">
                     <TicketManagement
-                        onNextTicket={handleNextTicket}
+                        onNextTicket={handleNextTicket} // Pass the updated handler
                         canCallNext={ticketQueue.length > 0}
+                        selectedDesk={selectedDesk} // Pass selected desk state
+                        onSelectDesk={setSelectedDesk} // Pass desk selection handler
                     />
                     </div>
                     {/* Call History Section (for manager) */}

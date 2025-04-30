@@ -17,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from "@/components/ui/badge";
+import { MonitorSmartphone } from "lucide-react"; // Import desk icon
 
 interface CallHistoryDisplayProps {
   calledTickets: Ticket[];
@@ -46,6 +47,7 @@ export function CallHistoryDisplay({ calledTickets }: CallHistoryDisplayProps) {
                 <TableHead className="w-[80px]">Senha</TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Tipo Atend.</TableHead>
+                <TableHead className="w-[80px]">Guichê</TableHead> {/* Added Guichê column */}
                 <TableHead className="text-right">Hora da Chamada</TableHead>
               </TableRow>
             </TableHeader>
@@ -60,6 +62,15 @@ export function CallHistoryDisplay({ calledTickets }: CallHistoryDisplayProps) {
                             {ticket.serviceType}
                        </Badge>
                     </TableCell>
+                    <TableCell className="text-center">
+                       {/* Display Desk Number */}
+                       {ticket.deskNumber ? (
+                          <Badge variant="secondary" className="text-xs p-1">
+                              <MonitorSmartphone className="mr-1 h-3 w-3"/>
+                              {ticket.deskNumber}
+                          </Badge>
+                       ) : '-'}
+                    </TableCell>
                     <TableCell className="text-right">
                       {ticket.callTimestamp ? format(ticket.callTimestamp, "HH:mm:ss - dd/MM/yy", { locale: ptBR }) : 'N/A'}
                     </TableCell>
@@ -67,7 +78,7 @@ export function CallHistoryDisplay({ calledTickets }: CallHistoryDisplayProps) {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground"> {/* Updated colspan */}
                     Nenhuma senha foi chamada ainda.
                   </TableCell>
                 </TableRow>

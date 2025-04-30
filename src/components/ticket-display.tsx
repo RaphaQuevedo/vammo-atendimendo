@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { MonitorSmartphone } from "lucide-react"; // Import desk icon
 
 interface TicketDisplayProps {
   currentTicket: Ticket | null;
@@ -44,9 +45,19 @@ export function TicketDisplay({ currentTicket, upcomingTickets }: TicketDisplayP
               <p className="text-xl font-medium text-foreground">
                 {currentTicket.firstName} {currentTicket.lastName}
               </p>
-              <Badge variant={getBadgeVariant(currentTicket.serviceType)} className="text-sm">
-                {currentTicket.serviceType}
-              </Badge>
+              <div className="flex flex-wrap justify-center items-center gap-2">
+                 <Badge variant={getBadgeVariant(currentTicket.serviceType)} className="text-sm">
+                   {currentTicket.serviceType}
+                 </Badge>
+                 {/* Display Desk Number */}
+                 {currentTicket.deskNumber && (
+                    <Badge variant="secondary" className="text-sm">
+                         <MonitorSmartphone className="mr-1.5 h-4 w-4"/>
+                         Guichê {currentTicket.deskNumber}
+                    </Badge>
+                 )}
+              </div>
+
               {currentTicket.callTimestamp && (
                  <p className="text-xs text-muted-foreground mt-1">
                    Chamado às: {format(currentTicket.callTimestamp, "HH:mm:ss ' - ' dd/MM/yyyy", { locale: ptBR })}

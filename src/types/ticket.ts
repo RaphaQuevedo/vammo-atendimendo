@@ -9,4 +9,6 @@ export interface Ticket {
   serviceType: ServiceType;
   timestamp: Date; // Time the ticket was generated
   callTimestamp?: Date; // Optional: Time the ticket was called
+  deskNumber?: number; // Optional: Desk number that called the ticket (1-4)
 }
+
