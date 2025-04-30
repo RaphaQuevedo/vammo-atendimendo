@@ -48,14 +48,39 @@ export default function Home() {
 
   const playNotificationSound = () => {
     if (audioRef.current) {
-      audioRef.current.play().catch(error => {
-        console.error("Error playing notification sound:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro de Áudio",
-          description: "Não foi possível tocar o som de notificação.",
-        });
+      // Ensure the audio is loaded before playing, reset playback position
+      audioRef.current.load(); // Reload or ensure it's loaded
+      audioRef.current.currentTime = 0; // Reset to start
+      console.log("Attempting to play notification sound..."); // Log attempt
+
+      audioRef.current.play()
+        .then(() => {
+            console.log("Notification sound played successfully."); // Log success
+        })
+        .catch(error => {
+            console.error("Error playing notification sound:", error); // Log the actual error
+            let description = "Não foi possível tocar o som de notificação. Verifique o console para detalhes.";
+             // Check common error types for more specific user feedback
+            if (error.name === 'NotAllowedError') {
+                 console.error("Autoplay was prevented. Ensure this was triggered by user interaction.");
+                 description = "O navegador impediu a reprodução automática do som. A interação do usuário pode ser necessária.";
+            } else if (error.name === 'NotSupportedError') {
+                 console.error("The audio format may not be supported or the source is invalid.");
+                 description = "Formato de áudio não suportado ou arquivo '/sounds/notification.mp3' inválido/não encontrado na pasta 'public'.";
+            }
+             toast({
+                variant: "destructive",
+                title: "Erro de Áudio",
+                description: description,
+             });
       });
+    } else {
+        console.error("Audio ref is not available or audio element not mounted."); // Log if ref is null
+        toast({
+            variant: "destructive",
+            title: "Erro de Áudio",
+            description: "Referência de áudio não encontrada. O elemento de áudio pode não ter sido carregado.",
+        });
     }
   };
 
@@ -74,7 +99,7 @@ export default function Home() {
 
         setCurrentTicket(updatedTicket);
         setCalledTickets((prevHistory) => [updatedTicket, ...prevHistory]);
-        playNotificationSound();
+        playNotificationSound(); // Call sound function
          // Display toast confirmation for the called ticket
         toast({
           title: "Senha Chamada",
@@ -95,7 +120,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-8 lg:p-12 bg-secondary">
-      {/* Hidden Audio Element - Ensure you have a sound file at this path */}
+      {/* Hidden Audio Element - IMPORTANT: Ensure you have a valid sound file at '/sounds/notification.mp3' inside the 'public' directory */}
       <audio ref={audioRef} src="/sounds/notification.mp3" preload="auto" />
 
       <div className="w-full max-w-7xl space-y-10">
