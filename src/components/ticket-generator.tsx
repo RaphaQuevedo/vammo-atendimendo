@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { TicketIcon, User, List } from "lucide-react"; // Added User and List icons
+import { TicketIcon, User, List } from "lucide-react"; // Keep User icon, List might be removed if not used elsewhere
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -24,13 +24,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"; // Import Select components
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // Import RadioGroup components
+import { Label } from "@/components/ui/label"; // Import Label for RadioGroup items
 import { useToast } from "@/hooks/use-toast";
 import { SERVICE_TYPES, type ServiceType, type Ticket } from "@/types/ticket"; // Import types
 
@@ -54,7 +49,7 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
     defaultValues: {
       firstName: "",
       lastName: "",
-      // serviceType: undefined // Let placeholder handle initial state
+      serviceType: undefined // Start with no selection
     },
   });
 
@@ -74,7 +69,7 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
   };
 
   return (
-    <Card className="w-full shadow-lg col-span-1 lg:col-span-2 bg-card"> {/* Span across columns on large screens, changed bg */}
+    <Card className="w-full shadow-lg col-span-1 lg:col-span-2 bg-card">
       <CardHeader className="text-center">
         <CardTitle className="text-primary">Gerar Nova Senha</CardTitle>
         <CardDescription>Preencha seus dados e selecione o tipo de atendimento.</CardDescription>
@@ -120,25 +115,26 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
               control={form.control}
               name="serviceType"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="space-y-3">
                   <FormLabel>Tipo de Atendimento</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                       <div className="relative">
-                        <List className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <SelectTrigger className="pl-8">
-                           <SelectValue placeholder="Selecione o serviço" />
-                        </SelectTrigger>
-                      </div>
-                    </FormControl>
-                    <SelectContent>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-4" // Arrange buttons horizontally on medium screens and up
+                    >
                       {SERVICE_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
+                        <FormItem key={type} className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value={type} id={`service-${type}`} />
+                          </FormControl>
+                          <Label htmlFor={`service-${type}`} className="font-normal cursor-pointer">
+                            {type}
+                          </Label>
+                        </FormItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </RadioGroup>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
