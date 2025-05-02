@@ -7,11 +7,12 @@ This is a Next.js application for managing customer queues using tickets.
 
 - `/src/app/`: Contains the main application pages using Next.js App Router.
   - `page.tsx`: Landing page directing users to different terminals.
-  - `/manage/page.tsx`: Interface for customers to request a new ticket AND for staff to manage the queue and call tickets.
+  - `/request/page.tsx`: Interface for customers to request a new ticket.
+  - `/manage/page.tsx`: Interface for staff to manage the queue (call tickets, view history, etc.).
   - `/display/page.tsx`: Public display screen showing the current ticket and call history.
 - `/src/components/`: Reusable React components.
   - `/ui/`: Components from shadcn/ui library.
-  - `ticket-generator.tsx`: Form for generating new tickets (used within `/manage`).
+  - `ticket-generator.tsx`: Form for generating new tickets (used within `/request`).
   - `ticket-management.tsx`: Controls for staff to manage the queue (used within `/manage`).
   - `ticket-display.tsx`: Component for the public display screen.
   - `call-history-display.tsx`: Component to show the list of recently called tickets.
@@ -59,7 +60,7 @@ This is a Next.js application for managing customer queues using tickets.
         NEXT_PUBLIC_FIREBASE_APP_ID=YOUR_APP_ID
         NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=YOUR_MEASUREMENT_ID # Optional
         ```
-    *   **Important:** Replace `YOUR_...` placeholders with your actual Firebase credentials.
+    *   **Important:** Replace `YOUR_...` placeholders with your actual Firebase credentials. Ensure `YOUR_PROJECT_ID` is correctly set in both `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
 
 5.  **Run the development server:**
     ```bash
@@ -75,7 +76,8 @@ This is a Next.js application for managing customer queues using tickets.
 ## Available Interfaces
 
 *   **Landing Page (`/`)**: Provides links to the different terminal interfaces.
-*   **Atendimento & Gerenciamento (`/manage`)**: Allows customers to generate new tickets AND enables staff to view the queue, call next/previous/recall tickets, see call history, and select a desk number.
+*   **Solicitar Senha (`/request`)**: Allows customers to generate a new ticket by providing their name and selecting a service type.
+*   **Gerenciar Fila (`/manage`)**: Enables staff to view the queue, call next/previous/recall tickets, see call history, and select a desk number.
 *   **Public Display (`/display`)**: Shows the currently called ticket, upcoming tickets, and recent call history. Includes a notification sound when a new ticket is called.
 
 ## Firestore Data Structure
@@ -89,10 +91,13 @@ This is a Next.js application for managing customer queues using tickets.
 
 *   **Real-time Updates:** Uses Firestore listeners for live updates to the queue, current ticket display, and call history across all interfaces.
 *   **Atomic Counter:** Ensures unique and sequential ticket numbers even with concurrent requests.
-*   **Combined Interface:** Single view for both requesting tickets and managing the queue.
+*   **Separate Interfaces:** Dedicated views for requesting tickets, managing the queue, and public display.
 *   **Desk Assignment:** Staff select a desk number (1-4) when calling tickets.
 *   **Ticket Statuses:** Tracks tickets through 'waiting', 'called', 'completed', and 'skipped' states.
 *   **Call Actions:** Staff can call the next ticket, recall the current ticket, or call the previously handled ticket.
 *   **Notification Sound:** Plays an audio alert on the display screen when a new ticket is called.
 *   **Responsive Design:** Uses shadcn/ui and Tailwind CSS for a modern, responsive layout.
+*   **Form Validation:** Uses Zod for client-side validation on the ticket request form.
+*   **Error Handling:** Provides user feedback via toasts for successful operations and errors.
+*   **Initialization Checks:** Ensures the ticket counter system is ready before allowing ticket generation.
 

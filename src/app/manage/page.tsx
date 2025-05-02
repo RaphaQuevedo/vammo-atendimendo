@@ -2,26 +2,23 @@
 "use client";
 
 import * as React from "react";
-import { TicketGenerator, type TicketFormData } from "@/components/ticket-generator";
 import { TicketManagement } from "@/components/ticket-management";
 import { CallHistoryDisplay } from "@/components/call-history-display";
 import type { Ticket } from "@/types/ticket";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings, TicketIcon, Loader2, AlertTriangle, ClipboardList } from "lucide-react"; // Added icons for generator
+import { Settings } from "lucide-react"; // Only need Settings icon now
 import {
   onQueueUpdate,
   onCallHistoryUpdate,
   updateTicketStatus,
   getLatestCalledTicket,
   onCurrentTicketUpdate,
-  addTicket, // Import addTicket
-  initializeTicketCounter // Import initializeTicketCounter
+  // Remove ticket generation related imports:
+  // addTicket,
+  // initializeTicketCounter
 } from "@/lib/firebase/firestore"; // Import Firestore functions
-
-// Define states for initialization (moved from request page)
-type InitState = "initializing" | "ready" | "error";
 
 export default function ManageQueuePage() {
   const [ticketQueue, setTicketQueue] = React.useState<Ticket[]>([]);
@@ -31,76 +28,40 @@ export default function ManageQueuePage() {
   const audioRef = React.useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
 
-  // Initialization state (moved from request page)
-  const [initState, setInitState] = React.useState<InitState>("initializing");
-  const [initError, setInitError] = React.useState<string | null>(null);
-
-  // --- Counter Initialization (moved from request page) ---
+  // --- Firestore Listeners ---
   React.useEffect(() => {
-    let isMounted = true;
-
-    const initialize = async () => {
-        console.log("[ManagePage] Attempting to initialize ticket counter...");
-        setInitState("initializing");
-        setInitError(null);
-        try {
-            await initializeTicketCounter(0);
-            if (isMounted) {
-                console.log("[ManagePage] Ticket counter initialization successful.");
-                setInitState("ready");
-            }
-        } catch (error) {
-            console.error("[ManagePage] CRITICAL: Failed to initialize ticket counter:", error);
-            const errorMsg = `Não foi possível inicializar o sistema de senhas. Verifique a conexão ou contate o suporte. Detalhes: ${error instanceof Error ? error.message : String(error)}`;
-            if (isMounted) {
-                setInitError(errorMsg);
-                setInitState("error");
-                toast({
-                    variant: "destructive",
-                    title: "Erro Crítico de Inicialização",
-                    description: errorMsg,
-                    duration: Infinity,
-                });
-            }
-        }
-    };
-
-    initialize();
-
-    return () => {
-        isMounted = false;
-        console.log("[ManagePage] Unmounting, initialization cancelled if pending.");
-    };
-  }, [toast]);
-
-  // --- Firestore Listeners (existing) ---
-  React.useEffect(() => {
+    console.log("[ManagePage] Setting up Firestore listeners...");
     const unsubscribeQueue = onQueueUpdate(setTicketQueue);
-    const unsubscribeHistory = onCallHistoryUpdate(50, setCalledTickets);
+    const unsubscribeHistory = onCallHistoryUpdate(50, setCalledTickets); // Get up to 50 history items
     const unsubscribeCurrent = onCurrentTicketUpdate(setCurrentTicket);
 
+    // Cleanup listeners on unmount
     return () => {
+      console.log("[ManagePage] Unmounting, cleaning up Firestore listeners.");
       unsubscribeQueue();
       unsubscribeHistory();
       unsubscribeCurrent();
     };
   }, []);
 
-  // --- Audio Playback (existing) ---
+  // --- Audio Playback ---
  const playNotificationSound = React.useCallback(() => {
     if (audioRef.current) {
-        audioRef.current.load();
-        audioRef.current.currentTime = 0;
+        // Ensure the audio element is ready and reset playback position
+        audioRef.current.load(); // Reset the audio element
+        audioRef.current.currentTime = 0; // Ensure playback starts from the beginning
         const playPromise = audioRef.current.play();
+
         if (playPromise !== undefined) {
             playPromise.catch(error => {
                 console.error("Error during audio play:", error);
-                let description = "Erro ao reproduzir o som.";
-                if (error.name === 'NotAllowedError') {
-                    description = "Reprodução automática bloqueada. Clique na página para habilitar o som.";
-                } else if (error.name === 'NotSupportedError') {
-                    description = "Formato de áudio não suportado ou arquivo '/sounds/notification.mp3' não encontrado.";
-                }
+                 let description = "Erro ao reproduzir o som.";
+                 // Provide more specific feedback based on the error type
+                 if (error.name === 'NotAllowedError') {
+                     description = "Reprodução automática bloqueada. Clique na página para habilitar o som.";
+                 } else if (error.name === 'NotSupportedError') {
+                     description = "Formato de áudio não suportado ou arquivo '/sounds/notification.mp3' não encontrado.";
+                 }
                 toast({
                     variant: "destructive",
                     title: "Erro de Áudio",
@@ -116,95 +77,38 @@ export default function ManageQueuePage() {
             description: "Elemento de áudio não está pronto.",
         });
     }
- }, [toast]);
+ }, [toast]); // Add toast as a dependency
 
 
-  // --- Ticket Generation Handler (moved from request page) ---
-  const handleGenerateTicket = async (formData: TicketFormData): Promise<Ticket | null> => {
-     if (initState === "initializing") {
-        toast({ title: "Aguarde...", description: "O sistema de senhas ainda está sendo preparado." });
-        return null;
-    }
-    if (initState === "error") {
-         toast({ variant: "destructive", title: "Erro de Sistema", description: initError || "Ocorreu um erro durante a inicialização.", duration: 10000 });
-        return null;
-    }
-
-    try {
-        const ticketData: Omit<Ticket, 'id' | 'number' | 'timestamp' | 'status' | 'callTimestamp' | 'deskNumber'> = {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            serviceType: formData.serviceType,
-        };
-        console.log("[ManagePage] Attempting to add ticket with data:", ticketData);
-        const newTicket = await addTicket(ticketData);
-        console.log("[ManagePage] Ticket added successfully:", newTicket);
-
-        if (newTicket?.number !== undefined) {
-            toast({
-            title: "Senha Gerada com Sucesso!",
-            description: (
-                <div>
-                <p>Senha: <span className="font-bold">{newTicket.number}</span></p>
-                <p>Nome: {newTicket.firstName} {newTicket.lastName}</p>
-                <p>Atendimento: {newTicket.serviceType}</p>
-                <p className="text-xs text-muted-foreground mt-2">Dirija-se à sala de espera.</p>
-                </div>
-            ),
-            duration: 10000,
-            });
-            return newTicket;
-        } else {
-             console.error("[ManagePage] Received incomplete ticket data after creation:", newTicket);
-             throw new Error("Received incomplete ticket data after creation.");
-        }
-    } catch (error: unknown) {
-        console.error("[ManagePage] Error generating ticket:", error);
-        let errorDesc = "Não foi possível gerar a senha.";
-         if (error instanceof Error) {
-            if (error.message.includes("counter is not initialized")) {
-                errorDesc = "Erro crítico ao obter número da senha. O sistema não inicializou corretamente. Recarregue a página ou contate o suporte."
-            } else if (error.message.includes("transaction error") || error.message.includes("Could not retrieve")) {
-                 errorDesc = "Ocorreu um erro de comunicação ao gerar a senha. Tente novamente."
-            } else {
-                 errorDesc = `Ocorreu um erro: ${error.message}`;
-            }
-        } else {
-             errorDesc = `Ocorreu um erro inesperado: ${String(error)}`;
-        }
-
-        toast({
-          variant: "destructive",
-          title: "Erro ao Gerar Senha",
-          description: errorDesc,
-          duration: 10000,
-        });
-        return null;
-    }
-  };
-
-  // Disable generator form if initializing or error
-  const isGeneratorDisabled = initState !== "ready";
-
-  // --- Ticket Management Actions (existing) ---
+  // --- Ticket Management Actions ---
   const handleNextTicket = async (deskNumber: number) => {
+    if (!selectedDesk) {
+        toast({ variant: "destructive", title: "Erro", description: "Selecione um guichê antes de chamar." });
+        return;
+    }
     if (ticketQueue.length > 0) {
-      const nextTicketToCall = ticketQueue[0];
+      const nextTicketToCall = ticketQueue[0]; // Get the first ticket in the waiting queue
       if (nextTicketToCall.id) {
           try {
+             // Mark the *currently* displayed 'called' ticket as 'completed' before calling the next one
              if (currentTicket && currentTicket.status === 'called' && currentTicket.id) {
+                 console.log(`[ManagePage] Marking current ticket ${currentTicket.id} as completed.`);
                  await updateTicketStatus(currentTicket.id, 'completed');
              }
-            await updateTicketStatus(nextTicketToCall.id, 'called', deskNumber);
-            playNotificationSound();
-            toast({
-              title: "Senha Chamada",
-              description: `Senha ${nextTicketToCall.number} (${nextTicketToCall.firstName} ${nextTicketToCall.lastName}) chamada para o Guichê ${deskNumber}.`,
-            });
+              console.log(`[ManagePage] Calling next ticket ${nextTicketToCall.id} for desk ${deskNumber}.`);
+              await updateTicketStatus(nextTicketToCall.id, 'called', deskNumber); // Pass desk number
+              playNotificationSound();
+              toast({
+                title: "Senha Chamada",
+                description: `Senha ${nextTicketToCall.number} (${nextTicketToCall.firstName} ${nextTicketToCall.lastName}) chamada para o Guichê ${deskNumber}.`,
+              });
           } catch (error) {
               console.error("Error calling next ticket:", error);
               toast({ variant: "destructive", title: "Erro ao Chamar", description: "Não foi possível chamar a próxima senha." });
           }
+      } else {
+            console.error("[ManagePage] Next ticket in queue is missing an ID:", nextTicketToCall);
+             toast({ variant: "destructive", title: "Erro Interno", description: "A próxima senha na fila está inválida." });
       }
     } else {
       toast({ title: "Fila Vazia", description: "Não há mais senhas para chamar." });
@@ -212,8 +116,14 @@ export default function ManageQueuePage() {
   };
 
   const handleRecallTicket = async (deskNumber: number) => {
-    if (currentTicket?.id && currentTicket.status === 'called') {
+     if (!selectedDesk) {
+        toast({ variant: "destructive", title: "Erro", description: "Selecione um guichê antes de rechamar." });
+        return;
+    }
+    if (currentTicket?.id && currentTicket.status === 'called') { // Ensure there's a ticket currently marked as 'called'
         try {
+            console.log(`[ManagePage] Recalling ticket ${currentTicket.id} for desk ${deskNumber}.`);
+            // Just update status to 'called' again with the desk number, triggering timestamp update and listener
             await updateTicketStatus(currentTicket.id, 'called', deskNumber);
             playNotificationSound();
             toast({ title: "Senha Rechamada", description: `Senha ${currentTicket.number} (${currentTicket.firstName} ${currentTicket.lastName}) rechamada para o Guichê ${deskNumber}.` });
@@ -226,18 +136,30 @@ export default function ManageQueuePage() {
     }
   };
 
+ // Handler to call the previously completed/skipped ticket
  const handleCallPreviousTicket = async (deskNumber: number) => {
+     if (!selectedDesk) {
+        toast({ variant: "destructive", title: "Erro", description: "Selecione um guichê antes de chamar anterior." });
+        return;
+    }
      try {
+        console.log(`[ManagePage] Attempting to fetch the latest historical ticket.`);
+        // Fetch the most recently called/completed/skipped ticket
         const latestCalled = await getLatestCalledTicket();
 
         if (latestCalled?.id) {
+             console.log(`[ManagePage] Found latest historical ticket: ${latestCalled.id}.`);
+             // Mark the *currently* displayed 'called' ticket as 'skipped' before calling the previous one, *if* it's different
              if (currentTicket && currentTicket.status === 'called' && currentTicket.id && currentTicket.id !== latestCalled.id) {
+                 console.log(`[ManagePage] Marking current ticket ${currentTicket.id} as skipped before calling previous.`);
                  await updateTicketStatus(currentTicket.id, 'skipped');
              }
-            await updateTicketStatus(latestCalled.id, 'called', deskNumber);
+            console.log(`[ManagePage] Calling previous ticket ${latestCalled.id} for desk ${deskNumber}.`);
+            await updateTicketStatus(latestCalled.id, 'called', deskNumber); // Mark the found ticket as 'called' for the selected desk
             playNotificationSound();
             toast({ title: "Chamando Senha Anterior", description: `Chamando novamente a senha ${latestCalled.number} (${latestCalled.firstName} ${latestCalled.lastName}) para o Guichê ${deskNumber}.` });
         } else {
+            console.log(`[ManagePage] No historical tickets found to call previous.`);
             toast({ title: "Histórico Vazio", description: "Nenhuma senha foi chamada anteriormente." });
         }
     } catch (error) {
@@ -249,75 +171,49 @@ export default function ManageQueuePage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start p-4 md:p-8 lg:p-12 bg-background">
+      {/* Audio element for notification sound */}
       <audio ref={audioRef} src="/sounds/notification.mp3" preload="auto" />
 
-      <div className="w-full max-w-7xl space-y-8">
+      <div className="w-full max-w-5xl space-y-8">
         <h1 className="text-3xl font-bold text-center text-primary mb-8">
-          Vammo - Atendimento e Gerenciamento
+          Vammo - Gerenciar Fila
         </h1>
 
-        {/* Combined Card for Generator and Management */}
-        <Card className="w-full shadow-lg bg-card">
-           <CardHeader>
-             <CardTitle id="manage-queue-heading" className="text-2xl font-semibold text-center text-primary flex justify-center items-center gap-2">
-                  <ClipboardList className="h-6 w-6"/> Solicitar Senha & Gerenciar Fila
-             </CardTitle>
-              <p className="text-center text-muted-foreground">Gere novas senhas ou controle o fluxo de atendimento.</p>
-           </CardHeader>
-           <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Column 1: Ticket Management Controls */}
+          <Card className="md:col-span-1 shadow-lg bg-card h-fit"> {/* Use h-fit */}
+            <CardHeader>
+              <CardTitle id="manage-queue-heading" className="text-xl font-semibold text-center text-primary flex justify-center items-center gap-2">
+                <Settings className="h-5 w-5"/> Controle de Chamadas
+              </CardTitle>
+              <p className="text-center text-muted-foreground text-sm">Selecione o guichê e gerencie a fila.</p>
+            </CardHeader>
+            <CardContent>
+              <TicketManagement
+                onNextTicket={handleNextTicket}
+                onRecallTicket={handleRecallTicket}
+                onCallPreviousTicket={handleCallPreviousTicket}
+                canCallNext={ticketQueue.length > 0}
+                canRecall={currentTicket !== null && currentTicket.status === 'called'} // Enable recall only if a ticket is 'called'
+                canCallPrevious={calledTickets.length > 0} // Enable if there's any history
+                selectedDesk={selectedDesk}
+                onSelectDesk={setSelectedDesk}
+              />
+            </CardContent>
+          </Card>
 
-             {/* Column 1: Ticket Generator */}
-             <div className="lg:col-span-1 space-y-4">
-                <h3 className="text-xl font-semibold text-center text-primary flex justify-center items-center gap-2">
-                   <TicketIcon className="h-5 w-5" /> Solicitar Senha
-                </h3>
-                 {/* Display loading/error for generator */}
-                 {initState === "initializing" && (
-                     <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-6 space-y-2">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p>Preparando sistema de senhas...</p>
-                         <p className="text-xs">(Isso pode levar alguns segundos)</p>
-                    </div>
-                )}
-                {initState === "error" && (
-                    <div className="flex flex-col items-center justify-center text-center text-destructive-foreground bg-destructive border border-destructive/50 rounded-md p-6 space-y-3">
-                         <AlertTriangle className="h-10 w-10" />
-                        <p className="font-semibold text-lg">Erro na Inicialização</p>
-                        <p className="text-sm">{initError || "Não foi possível conectar ao sistema de senhas."}</p>
-                    </div>
-                )}
-                 {/* Render the generator form only when ready */}
-                {initState === "ready" && (
-                    <TicketGenerator onGenerateTicket={handleGenerateTicket} disabled={isGeneratorDisabled} />
-                 )}
-             </div>
+          {/* Column 2: Call History */}
+          <Card className="md:col-span-2 shadow-lg bg-card">
+            <CardHeader>
+                <CardTitle className="text-xl font-medium text-center text-primary">Histórico de Chamadas</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <CallHistoryDisplay calledTickets={calledTickets} />
+            </CardContent>
+          </Card>
+        </div>
 
-             {/* Column 2: Ticket Management Controls */}
-             <div className="lg:col-span-1">
-                 <h3 className="text-xl font-semibold text-center text-primary flex justify-center items-center gap-2">
-                    <Settings className="h-5 w-5"/> Gerenciar Fila
-                 </h3>
-               <TicketManagement
-                 onNextTicket={handleNextTicket}
-                 onRecallTicket={handleRecallTicket}
-                 onCallPreviousTicket={handleCallPreviousTicket}
-                 canCallNext={ticketQueue.length > 0}
-                 canRecall={currentTicket !== null && currentTicket.status === 'called'}
-                 canCallPrevious={calledTickets.length > 0}
-                 selectedDesk={selectedDesk}
-                 onSelectDesk={setSelectedDesk}
-               />
-             </div>
-
-             {/* Column 3: Call History */}
-             <div className="lg:col-span-1">
-               <CallHistoryDisplay calledTickets={calledTickets} />
-             </div>
-           </CardContent>
-         </Card>
-
-
-         {/* Optional: Display upcoming tickets */}
+         {/* Section to display upcoming tickets */}
          <Separator />
          <Card className="w-full shadow-sm bg-card">
              <CardHeader>
@@ -325,9 +221,9 @@ export default function ManageQueuePage() {
              </CardHeader>
              <CardContent>
                  {ticketQueue.length > 0 ? (
-                     <ul className="space-y-2 text-center">
-                         {ticketQueue.slice(0, 5).map(ticket => (
-                             <li key={ticket.id} className="p-2 bg-secondary rounded-md">
+                     <ul className="space-y-2 text-center max-h-60 overflow-y-auto p-2 border rounded-md bg-secondary/50"> {/* Added scroll */}
+                         {ticketQueue.map(ticket => (
+                             <li key={ticket.id} className="p-2 bg-background rounded-md shadow-sm">
                                  <span className="font-bold">{ticket.number}</span> - {ticket.firstName} {ticket.lastName} ({ticket.serviceType})
                              </li>
                          ))}

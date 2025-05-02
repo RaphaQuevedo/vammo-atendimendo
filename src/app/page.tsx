@@ -1,13 +1,14 @@
 
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button'; // Import buttonVariants
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TicketIcon, Settings, MonitorPlay, ClipboardList } from 'lucide-react'; // Added ClipboardList
+import { TicketIcon, Settings, MonitorPlay } from 'lucide-react';
+import { cn } from '@/lib/utils'; // Import cn
 
 export default function LandingPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 lg:p-12 bg-secondary">
-      <div className="w-full max-w-2xl space-y-10 text-center">
+      <div className="w-full max-w-3xl space-y-10 text-center"> {/* Increased max-width */}
         <h1 className="text-4xl font-bold text-primary mb-10">
           Vammo - Sistema de Atendimento por Senhas
         </h1>
@@ -16,22 +17,49 @@ export default function LandingPage() {
           Selecione o terminal que deseja acessar:
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Changed to 2 columns */}
-          {/* Link para Solicitar Senha & Gerenciar Fila */}
+        {/* Changed to 3 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Link para Solicitar Senha */}
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
               <CardTitle className="flex flex-col items-center gap-2 text-xl font-semibold text-primary">
-                <ClipboardList className="h-10 w-10" /> {/* Updated Icon */}
-                Atendimento & Gerenciamento {/* Updated Title */}
+                <TicketIcon className="h-10 w-10" />
+                Solicitar Senha
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Terminal para solicitar senhas e gerenciar a fila de atendimento. {/* Updated Description */}
+                Terminal para clientes solicitarem uma nova senha de atendimento.
               </p>
-              <Button asChild size="lg" className="w-full">
-                <Link href="/manage">Acessar Atendimento</Link>{/* Link points to /manage */}
-              </Button>
+              {/* Use Link directly with button styles */}
+              <Link
+                href="/request"
+                className={cn(buttonVariants({ size: "lg" }), "w-full")} // Apply button styles directly
+              >
+                Acessar Solicitação
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Link para Gerenciar Fila */}
+          <Card className="shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex flex-col items-center gap-2 text-xl font-semibold text-primary">
+                <Settings className="h-10 w-10" />
+                Gerenciar Fila
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">
+                Interface para atendentes gerenciarem a fila e chamarem senhas.
+              </p>
+               {/* Use Link directly with button styles */}
+              <Link
+                href="/manage"
+                className={cn(buttonVariants({ size: "lg" }), "w-full")} // Apply button styles directly
+              >
+                Acessar Gerenciador
+              </Link>
             </CardContent>
           </Card>
 
@@ -47,9 +75,13 @@ export default function LandingPage() {
                <p className="text-muted-foreground mb-4">
                 Tela pública exibindo a senha atual e o histórico de chamadas.
                </p>
-              <Button asChild size="lg" className="w-full">
-                <Link href="/display">Acessar Painel</Link>
-              </Button>
+               {/* Use Link directly with button styles */}
+              <Link
+                href="/display"
+                className={cn(buttonVariants({ size: "lg" }), "w-full")} // Apply button styles directly
+              >
+                Acessar Painel
+              </Link>
             </CardContent>
           </Card>
         </div>
@@ -57,3 +89,4 @@ export default function LandingPage() {
     </main>
   );
 }
+
