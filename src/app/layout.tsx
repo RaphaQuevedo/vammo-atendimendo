@@ -1,7 +1,9 @@
+
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster'; // Import Toaster
+import { cn } from '@/lib/utils'; // Import cn utility
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -24,8 +26,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    // Apply font variables to the <html> tag
+    <html lang="pt-BR" className={cn(geistSans.variable, geistMono.variable)}>
+      {/* Apply standard Tailwind classes to the <body> tag */}
+      <body className='antialiased'>
         {children}
         <Toaster /> {/* Add Toaster here */}
       </body>
