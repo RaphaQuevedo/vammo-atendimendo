@@ -17,11 +17,13 @@ interface TicketDisplayProps {
 
 export function TicketDisplay({ currentTicket, upcomingTickets }: TicketDisplayProps) {
   const getBadgeVariant = (serviceType: string | undefined): "default" | "secondary" | "destructive" | "outline" => {
+    // Adjusted variants for new types
     switch (serviceType) {
-      case 'Agendamento': return 'default';
-      case 'Manutenção': return 'secondary';
-      case 'Vendas': return 'destructive';
-      default: return 'outline';
+      case 'Manutenção': return 'secondary'; // Keep Manutenção as secondary
+      case 'Vendas': return 'destructive'; // Keep Vendas as destructive
+      case 'Retirada de Moto': return 'default'; // Use default (primary) for Retirada
+      case 'Outros': return 'outline'; // Use outline for Outros
+      default: return 'outline'; // Default fallback
     }
   };
 

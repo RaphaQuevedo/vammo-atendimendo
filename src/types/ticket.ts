@@ -1,5 +1,6 @@
 
-export const SERVICE_TYPES = ['Agendamento', 'Manutenção', 'Vendas'] as const;
+
+export const SERVICE_TYPES = ['Manutenção', 'Vendas', 'Retirada de Moto', 'Outros'] as const;
 export type ServiceType = typeof SERVICE_TYPES[number];
 
 export interface Ticket {

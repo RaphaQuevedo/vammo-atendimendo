@@ -97,7 +97,8 @@ export function TicketGenerator({ onGenerateTicket }: TicketGeneratorProps) {
                     <RadioGroup
                       onValueChange={field.onChange}
                       value={field.value} // Use value instead of defaultValue for controlled component
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-4" // Arrange buttons in a grid
+                      // Adjust grid columns for 4 items: 2 cols on small screens, 4 on medium+
+                      className="grid grid-cols-2 sm:grid-cols-4 gap-4"
                     >
                       {SERVICE_TYPES.map((type) => (
                         <FormItem key={type} className="flex items-center space-x-0">
