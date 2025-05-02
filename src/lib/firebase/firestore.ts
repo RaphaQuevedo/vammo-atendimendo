@@ -25,20 +25,52 @@ const COUNTER_COLLECTION = 'counters';
 const TICKET_COUNTER_DOC = 'ticketCounter';
 
 // Helper to convert Firestore Timestamps to Dates in a ticket object
-const convertTimestamps = (ticketData: any): Ticket => {
-  const data = { ...ticketData };
-  // Ensure timestamp exists and is a Firestore Timestamp before converting
+// Assumes the input object 'ticketDataWithId' already includes the Firestore document ID as 'id'.
+const convertTimestamps = (ticketDataWithId: any): Ticket => {
+  // Ensure the input has an ID, throw if not for better error tracing
+  if (!ticketDataWithId || typeof ticketDataWithId.id !== 'string' || ticketDataWithId.id === '') {
+      console.error("[Firestore Convert] Input data is missing a valid 'id' field:", ticketDataWithId);
+      throw new Error("Internal error: Cannot process ticket data without a valid ID.");
+  }
+
+  const data = { ...ticketDataWithId }; // Clone to avoid modifying the original object directly
+
+  // Convert Firestore Timestamp to JavaScript Date for 'timestamp'
   if (data.timestamp && typeof data.timestamp.toDate === 'function') {
     data.timestamp = data.timestamp.toDate();
+  } else if (data.timestamp && !(data.timestamp instanceof Date)) {
+      // If it exists but isn't a Timestamp or Date, log a warning and maybe nullify it or attempt conversion if possible
+      console.warn(`[Firestore Convert] Ticket ${data.id}: 'timestamp' field is not a Firestore Timestamp or Date. Found:`, data.timestamp);
+      // Decide on handling: nullify, attempt conversion, or leave as is based on expected data types.
+      // For now, let's nullify it to prevent potential downstream errors.
+      // data.timestamp = null; // Or handle differently as needed
   }
-  // Ensure callTimestamp exists and is a Firestore Timestamp before converting
+
+
+  // Convert Firestore Timestamp to JavaScript Date for 'callTimestamp'
    if (data.callTimestamp && typeof data.callTimestamp.toDate === 'function') {
     data.callTimestamp = data.callTimestamp.toDate();
+  } else if (data.callTimestamp === undefined) {
+       // Explicitly set to null if undefined, matching the Ticket type ( | null)
+       data.callTimestamp = null;
+   } else if (data.callTimestamp && !(data.callTimestamp instanceof Date)) {
+      // If it exists but isn't a Timestamp, Date, or null, log a warning.
+      console.warn(`[Firestore Convert] Ticket ${data.id}: 'callTimestamp' field is not a Firestore Timestamp, Date, or null. Found:`, data.callTimestamp);
+      // data.callTimestamp = null; // Or handle differently
   }
-  // Ensure id is present
-  if (!data.id && ticketData.id) {
-       data.id = ticketData.id;
-   }
+    // Ensure deskNumber is null if undefined or not a number
+  if (data.deskNumber === undefined) {
+      data.deskNumber = null;
+  } else if (typeof data.deskNumber !== 'number' && data.deskNumber !== null) {
+       console.warn(`[Firestore Convert] Ticket ${data.id}: 'deskNumber' field is not a number or null. Found:`, data.deskNumber);
+       data.deskNumber = null;
+  }
+
+
+  // The 'id' is already assumed to be present and correct in 'data' from the input 'ticketDataWithId'
+  // No need for the previous check: if (!data.id && ticketDataWithId.id)
+
+  // Cast to Ticket type. If data structure mismatches occur often, consider more robust validation (e.g., with Zod).
   return data as Ticket;
 };
 
@@ -84,7 +116,14 @@ const getNextTicketNumber = async (): Promise<number> => {
       if (!counterSnap.exists()) {
         // If the counter doesn't exist here, initialization failed or hasn't run properly.
         console.error("[Firestore] CRITICAL: Ticket counter document not found during getNextTicketNumber. Initialization might have failed or is incomplete.");
-        throw new Error("Ticket counter is not initialized. Please reload the page or contact support."); // More specific error
+        // Attempt initialization again, just in case, though this indicates a deeper issue.
+        // Consider if auto-initialization here is the right approach vs. failing hard.
+        // For robustness, let's try initializing at 0.
+        console.warn("[Firestore] Attempting to initialize counter within getNextTicketNumber...");
+        transaction.set(counterRef, { currentNumber: 0 });
+        console.log("[Firestore] Counter initialized to 0 within transaction. Returning 1 as the first number.");
+        return 1; // The number for the *current* ticket being generated is 1
+        // throw new Error("Ticket counter is not initialized. Please reload the page or contact support."); // More specific error
       }
 
       const currentNumber = counterSnap.data()?.currentNumber;
@@ -154,7 +193,7 @@ export const addTicket = async (ticketData: Omit<Ticket, 'number' | 'timestamp' 
         throw new Error("Failed to fetch the newly created ticket after adding.");
     }
      console.log("[Firestore] Successfully fetched new ticket document.");
-     // Construct the final Ticket object, converting timestamps
+     // Construct the final Ticket object, including the ID before converting timestamps
      const addedTicketData = { id: newDocSnap.id, ...newDocSnap.data() };
 
 
@@ -199,16 +238,18 @@ export const updateTicketStatus = async (
     } else if (status === 'completed' || status === 'skipped' || status === 'waiting') {
         // For 'completed', 'skipped', or resetting to 'waiting', clear call info
         // Note: We typically don't set back to 'waiting' via this function, but handle defensively.
-        updateData.callTimestamp = null;
-        updateData.deskNumber = null;
-         // If completing/skipping, we keep the last callTimestamp for history sorting,
-         // so only clear deskNumber unless explicitly setting back to 'waiting'.
-         if (status !== 'waiting') {
-            // Keep callTimestamp for completed/skipped for accurate sorting in history
-            delete updateData.callTimestamp;
-         } else {
+        updateData.deskNumber = null; // Always clear desk number for these statuses
+
+         // Decide how to handle callTimestamp based on the status
+         if (status === 'waiting') {
              // If explicitly setting back to 'waiting', ensure callTimestamp is nulled
              updateData.callTimestamp = null;
+         } else {
+             // For 'completed' and 'skipped', we *keep* the last `callTimestamp` for history sorting.
+             // Firestore `updateDoc` only modifies specified fields, so we *don't* include `callTimestamp`
+             // in `updateData` for 'completed' or 'skipped' unless we explicitly want to null it.
+             // In this case, we want to preserve it.
+             // delete updateData.callTimestamp; // This line is effectively what happens by not adding it
          }
     }
 
@@ -247,8 +288,13 @@ export const onQueueUpdate = (callback: (tickets: Ticket[]) => void): Unsubscrib
      console.log(`[Firestore] Queue update received. Found ${querySnapshot.size} waiting tickets.`);
     const tickets: Ticket[] = [];
     querySnapshot.forEach((doc) => {
-      // Pass the document id explicitly to convertTimestamps
-      tickets.push(convertTimestamps({ ...doc.data(), id: doc.id }));
+        try {
+            // Pass the document id explicitly to convertTimestamps
+            tickets.push(convertTimestamps({ ...doc.data(), id: doc.id }));
+        } catch (convertError) {
+            console.error(`[Firestore] Error converting ticket data for ID ${doc.id} in queue listener:`, convertError);
+            // Skip this ticket or handle the error as needed
+        }
     });
     callback(tickets);
   }, (error) => {
@@ -277,8 +323,13 @@ export const onCurrentTicketUpdate = (callback: (ticket: Ticket | null) => void)
     if (!querySnapshot.empty) {
       const doc = querySnapshot.docs[0];
        console.log(`[Firestore] Current ticket update received: ${doc.id}`);
-       // Pass the document id explicitly to convertTimestamps
-      callback(convertTimestamps({ ...doc.data(), id: doc.id }));
+        try {
+           // Pass the document id explicitly to convertTimestamps
+          callback(convertTimestamps({ ...doc.data(), id: doc.id }));
+        } catch (convertError) {
+             console.error(`[Firestore] Error converting current ticket data for ID ${doc.id}:`, convertError);
+             callback(null); // Indicate error by setting to null
+        }
     } else {
        console.log("[Firestore] No currently 'called' ticket found.");
       callback(null); // No ticket currently marked as 'called'
@@ -312,8 +363,13 @@ export const onCallHistoryUpdate = (
      console.log(`[Firestore] Call history update received. Found ${querySnapshot.size} relevant tickets.`);
     const tickets: Ticket[] = [];
     querySnapshot.forEach((doc) => {
-       // Pass the document id explicitly to convertTimestamps
-      tickets.push(convertTimestamps({ ...doc.data(), id: doc.id }));
+        try {
+           // Pass the document id explicitly to convertTimestamps
+          tickets.push(convertTimestamps({ ...doc.data(), id: doc.id }));
+        } catch (convertError) {
+            console.error(`[Firestore] Error converting ticket data for ID ${doc.id} in history listener:`, convertError);
+            // Skip this ticket or handle the error as needed
+        }
     });
     callback(tickets);
   }, (error) => {
@@ -341,8 +397,13 @@ export const peekNextTickets = async (count: number = 3): Promise<Ticket[]> => {
         const querySnapshot = await getDocs(q);
         const tickets: Ticket[] = [];
         querySnapshot.forEach((doc) => {
-             // Pass the document id explicitly to convertTimestamps
-            tickets.push(convertTimestamps({ ...doc.data(), id: doc.id }));
+            try {
+                // Pass the document id explicitly to convertTimestamps
+                tickets.push(convertTimestamps({ ...doc.data(), id: doc.id }));
+            } catch (convertError) {
+                 console.error(`[Firestore] Error converting ticket data for ID ${doc.id} while peeking:`, convertError);
+                 // Skip this ticket
+            }
         });
          console.log(`[Firestore] Found ${tickets.length} tickets to peek.`);
         return tickets;
@@ -371,8 +432,13 @@ export const getLatestCalledTicket = async (): Promise<Ticket | null> => {
         if (!querySnapshot.empty) {
             const doc = querySnapshot.docs[0];
             console.log(`[Firestore] Found latest ticket in history: ${doc.id}`);
-            // Pass the document id explicitly to convertTimestamps
-            return convertTimestamps({ ...doc.data(), id: doc.id });
+             try {
+                // Pass the document id explicitly to convertTimestamps
+                return convertTimestamps({ ...doc.data(), id: doc.id });
+            } catch (convertError) {
+                console.error(`[Firestore] Error converting latest called ticket data for ID ${doc.id}:`, convertError);
+                return null; // Return null if conversion fails
+            }
         }
          console.log("[Firestore] No tickets found in call history.");
         return null; // No tickets found in history
