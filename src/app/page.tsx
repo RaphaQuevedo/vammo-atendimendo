@@ -142,7 +142,7 @@ export default function Home() {
         <section aria-labelledby="request-ticket-heading">
            <Card className="w-full shadow-lg bg-card mb-8">
                 <CardHeader>
-                    <CardTitle id="request-ticket-heading" className="text-2xl font-semibold text-center text-primary">1. Solicitar Sua Senha</CardTitle>
+                    <CardTitle id="request-ticket-heading" className="text-2xl font-semibold text-center text-primary">Solicitar Sua Senha</CardTitle>
                 </CardHeader>
                 <CardContent>
                      <TicketGenerator onGenerateTicket={handleGenerateTicket} />
@@ -156,7 +156,7 @@ export default function Home() {
         <section aria-labelledby="manage-queue-heading" className="space-y-8">
            <Card className="w-full shadow-lg bg-card">
                <CardHeader>
-                    <CardTitle id="manage-queue-heading" className="text-2xl font-semibold text-center text-primary">2. Gerenciar Fila (Visão do Gestor)</CardTitle>
+                    <CardTitle id="manage-queue-heading" className="text-2xl font-semibold text-center text-primary">Gerenciar Fila</CardTitle>
                </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Ticket Management Section (Call Next) */}
@@ -182,7 +182,7 @@ export default function Home() {
         <section aria-labelledby="public-display-heading">
             <Card className="w-full shadow-lg bg-card">
                 <CardHeader>
-                     <CardTitle id="public-display-heading" className="text-2xl font-semibold text-center text-primary">3. Painel de Atendimento (Visão Pública)</CardTitle>
+                     <CardTitle id="public-display-heading" className="text-2xl font-semibold text-center text-primary">Painel de Atendimento</CardTitle>
                 </CardHeader>
                  <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Ticket Display Section */}
