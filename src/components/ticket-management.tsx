@@ -2,12 +2,13 @@
 "use client";
 
 import * as React from "react";
-import { ChevronRight, MonitorSmartphone, RefreshCw, Undo2 } from "lucide-react"; // Added icons
+import { ChevronRight, MonitorSmartphone, RefreshCw, Undo2, AlertTriangle } from "lucide-react"; // Added icons
 import { Button } from "@/components/ui/button";
 import { CardDescription } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Import Alert
 
 interface TicketManagementProps {
   onNextTicket: (deskNumber: number) => void;
@@ -51,6 +52,9 @@ export function TicketManagement({
        }
   };
 
+  // Determine if any action button should be disabled due to no desk selection
+  const isDeskRequired = selectedDesk === null;
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-start text-center p-4 space-y-6">
         <div>
@@ -62,7 +66,7 @@ export function TicketManagement({
         <div className="w-full">
             <Label className="mb-3 block font-medium text-left">Selecione o Guichê:</Label>
              <RadioGroup
-                value={selectedDesk?.toString()}
+                value={selectedDesk?.toString() ?? ""} // Ensure value is string or empty string
                 onValueChange={(value) => onSelectDesk(value ? parseInt(value, 10) : null)}
                 className="grid grid-cols-4 gap-2"
              >
@@ -84,12 +88,24 @@ export function TicketManagement({
              </RadioGroup>
         </div>
 
+        {/* Alert if no desk selected */}
+        {isDeskRequired && (
+             <Alert variant="destructive" className="text-left">
+                <AlertTriangle className="h-4 w-4"/>
+                <AlertTitle>Atenção!</AlertTitle>
+                <AlertDescription>
+                    Selecione um guichê acima para poder chamar as senhas.
+                </AlertDescription>
+            </Alert>
+        )}
+
+
         {/* Action Buttons */}
         <div className="w-full space-y-3">
              {/* Call Next Button */}
             <Button
               onClick={handleCallNext}
-              disabled={!canCallNext || selectedDesk === null}
+              disabled={!canCallNext || isDeskRequired} // Disable if no next or no desk
               className="bg-accent hover:bg-accent/90 text-accent-foreground w-full transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95"
               aria-label="Chamar próxima senha"
               size="lg"
@@ -101,7 +117,7 @@ export function TicketManagement({
              {/* Recall Button */}
              <Button
                 onClick={handleRecall}
-                disabled={!canRecall || selectedDesk === null}
+                disabled={!canRecall || isDeskRequired} // Disable if cannot recall or no desk
                 variant="outline"
                 className="w-full"
                 aria-label="Chamar novamente a senha atual"
@@ -114,7 +130,7 @@ export function TicketManagement({
              {/* Call Previous Button */}
             <Button
                 onClick={handleCallPrevious}
-                disabled={!canCallPrevious || selectedDesk === null}
+                disabled={!canCallPrevious || isDeskRequired} // Disable if cannot call previous or no desk
                 variant="outline"
                 className="w-full"
                 aria-label="Chamar senha anterior"
