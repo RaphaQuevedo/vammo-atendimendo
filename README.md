@@ -53,14 +53,14 @@ This is a Next.js application for managing customer queues using tickets.
         ```env
         # Firebase Configuration - Replace with your actual values
         NEXT_PUBLIC_FIREBASE_API_KEY=YOUR_API_KEY
-        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=YOUR_PROJECT_ID.firebaseapp.com # Make sure this matches your project ID
-        NEXT_PUBLIC_FIREBASE_PROJECT_ID=YOUR_PROJECT_ID
+        NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=senhafcil.firebaseapp.com # Make sure this matches your project ID
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID=senhafcil
         NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=YOUR_STORAGE_BUCKET
         NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=YOUR_MESSAGING_SENDER_ID
         NEXT_PUBLIC_FIREBASE_APP_ID=YOUR_APP_ID
         NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=YOUR_MEASUREMENT_ID # Optional
         ```
-    *   **Important:** Replace `YOUR_...` placeholders with your actual Firebase credentials. Ensure `YOUR_PROJECT_ID` is correctly set in both `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
+    *   **Important:** Replace `YOUR_...` placeholders with your actual Firebase credentials. Ensure `senhafcil` is correctly set in both `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
 
 5.  **Run the development server:**
     ```bash
@@ -100,4 +100,3 @@ This is a Next.js application for managing customer queues using tickets.
 *   **Form Validation:** Uses Zod for client-side validation on the ticket request form.
 *   **Error Handling:** Provides user feedback via toasts for successful operations and errors.
 *   **Initialization Checks:** Ensures the ticket counter system is ready before allowing ticket generation.
-
