@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TicketIcon, Settings, MonitorPlay } from 'lucide-react';
+import { TicketIcon, Settings, MonitorPlay, ClipboardList } from 'lucide-react'; // Added ClipboardList
 
 export default function LandingPage() {
   return (
@@ -16,39 +16,21 @@ export default function LandingPage() {
           Selecione o terminal que deseja acessar:
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Link para Solicitar Senha */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6"> {/* Changed to 2 columns */}
+          {/* Link para Solicitar Senha & Gerenciar Fila */}
           <Card className="shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader>
               <CardTitle className="flex flex-col items-center gap-2 text-xl font-semibold text-primary">
-                <TicketIcon className="h-10 w-10" />
-                Solicitar Senha
+                <ClipboardList className="h-10 w-10" /> {/* Updated Icon */}
+                Atendimento & Gerenciamento {/* Updated Title */}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground mb-4">
-                Terminal para clientes gerarem novas senhas de atendimento.
+                Terminal para solicitar senhas e gerenciar a fila de atendimento. {/* Updated Description */}
               </p>
               <Button asChild size="lg" className="w-full">
-                <Link href="/request">Acessar Solicitação</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Link para Gerenciar Fila */}
-          <Card className="shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex flex-col items-center gap-2 text-xl font-semibold text-primary">
-                 <Settings className="h-10 w-10" />
-                Gerenciar Fila
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                Interface para atendentes gerenciarem a fila e chamarem senhas.
-              </p>
-              <Button asChild size="lg" className="w-full">
-                <Link href="/manage">Acessar Gerenciamento</Link>
+                <Link href="/manage">Acessar Atendimento</Link>{/* Link points to /manage */}
               </Button>
             </CardContent>
           </Card>
