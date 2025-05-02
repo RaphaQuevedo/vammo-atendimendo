@@ -80,18 +80,18 @@ export default function ManageQueuePage() {
           try {
             // If there's a currently 'called' ticket, mark it as 'completed' first
              if (currentTicket && currentTicket.status === 'called' && currentTicket.id) {
-                 await updateTicketStatus(currentTicket.id, 'completed');
+                 await updateTicketStatus(currentTicket.id, 'completed'); // No desk number needed for completion
              }
 
-            await updateTicketStatus(nextTicketToCall.id, 'called', deskNumber, new Date());
+            // Call the next ticket, providing only the desk number.
+            // updateTicketStatus will handle setting status to 'called' and the server timestamp.
+            await updateTicketStatus(nextTicketToCall.id, 'called', deskNumber);
             playNotificationSound();
             toast({
               title: "Senha Chamada",
               description: `Senha ${nextTicketToCall.number} (${nextTicketToCall.firstName} ${nextTicketToCall.lastName}) chamada para o Guichê ${deskNumber}.`,
             });
-            // Firestore listener `onCurrentTicketUpdate` will update `currentTicket` state
-            // Firestore listener `onQueueUpdate` will update `ticketQueue` state
-            // Firestore listener `onCallHistoryUpdate` will update `calledTickets` state
+            // Firestore listeners handle state updates automatically
           } catch (error) {
               console.error("Error calling next ticket:", error);
               toast({
@@ -112,8 +112,9 @@ export default function ManageQueuePage() {
   const handleRecallTicket = async (deskNumber: number) => {
     if (currentTicket && currentTicket.id && currentTicket.status === 'called') {
         try {
-            // Update status again to refresh timestamp and potentially desk number
-            await updateTicketStatus(currentTicket.id, 'called', deskNumber, new Date());
+            // Recall the current ticket by setting status to 'called' again, providing desk number.
+            // updateTicketStatus handles the server timestamp update.
+            await updateTicketStatus(currentTicket.id, 'called', deskNumber);
             playNotificationSound();
             toast({
                 title: "Senha Rechamada",
@@ -143,14 +144,14 @@ export default function ManageQueuePage() {
 
         if (latestCalled?.id) {
              // If there's a currently 'called' ticket (different from the one we are about to call),
-             // mark it as 'skipped' or 'completed' before calling the previous one.
-             // Choose 'skipped' if the user explicitly calls previous, suggesting the current wasn't fully handled.
+             // mark it as 'skipped' before calling the previous one.
              if (currentTicket && currentTicket.status === 'called' && currentTicket.id && currentTicket.id !== latestCalled.id) {
-                 await updateTicketStatus(currentTicket.id, 'skipped'); // Mark current as skipped
+                 await updateTicketStatus(currentTicket.id, 'skipped'); // No desk number needed for skipping
              }
 
-            // Re-call the previous ticket by setting its status to 'called'
-            await updateTicketStatus(latestCalled.id, 'called', deskNumber, new Date());
+            // Re-call the previous ticket by setting its status to 'called', providing desk number.
+            // updateTicketStatus handles the server timestamp update.
+            await updateTicketStatus(latestCalled.id, 'called', deskNumber);
             playNotificationSound();
             toast({
                 title: "Chamando Senha Anterior",

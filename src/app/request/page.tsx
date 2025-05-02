@@ -38,33 +38,38 @@ export default function RequestTicketPage() {
         return null;
     }
     try {
-        // Prepare data, omitting fields managed by Firestore
-        const ticketData: Omit<Ticket, 'number' | 'timestamp' | 'status' | 'id' | 'callTimestamp' | 'deskNumber'> = {
+        // Prepare data for Firestore, matching the expected Omit type
+        const ticketData: Omit<Ticket, 'id' | 'number' | 'timestamp' | 'status' | 'callTimestamp' | 'deskNumber'> = {
             firstName: formData.firstName,
             lastName: formData.lastName,
             serviceType: formData.serviceType,
         };
         const newTicket = await addTicket(ticketData); // Add ticket to Firestore
 
-        toast({
-          title: "Senha Gerada com Sucesso!",
-          description: (
-            <div>
-              <p>Senha: <span className="font-bold">{newTicket.number}</span></p>
-              <p>Nome: {newTicket.firstName} {newTicket.lastName}</p>
-              <p>Atendimento: {newTicket.serviceType}</p>
-              <p className="text-xs text-muted-foreground mt-2">Dirija-se à sala de espera.</p>
-            </div>
-          ),
-          duration: 10000, // Show for 10 seconds
-        });
-        return newTicket; // Return the generated ticket (with ID and timestamp)
+        // Check if newTicket and its properties are valid before showing toast
+        if (newTicket && newTicket.number !== undefined && newTicket.firstName && newTicket.lastName && newTicket.serviceType) {
+            toast({
+            title: "Senha Gerada com Sucesso!",
+            description: (
+                <div>
+                <p>Senha: <span className="font-bold">{newTicket.number}</span></p>
+                <p>Nome: {newTicket.firstName} {newTicket.lastName}</p>
+                <p>Atendimento: {newTicket.serviceType}</p>
+                <p className="text-xs text-muted-foreground mt-2">Dirija-se à sala de espera.</p>
+                </div>
+            ),
+            duration: 10000, // Show for 10 seconds
+            });
+            return newTicket; // Return the generated ticket (with ID and server timestamp)
+        } else {
+             throw new Error("Received incomplete ticket data after creation.");
+        }
     } catch (error) {
         console.error("Error generating ticket:", error);
         toast({
           variant: "destructive",
           title: "Erro ao Gerar Senha",
-          description: "Não foi possível gerar a senha. Tente novamente ou contate o suporte.",
+          description: `Não foi possível gerar a senha. Detalhes: ${error instanceof Error ? error.message : String(error)}`,
         });
         return null;
     }

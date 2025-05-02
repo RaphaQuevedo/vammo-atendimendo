@@ -8,13 +8,14 @@ export type ServiceType = typeof SERVICE_TYPES[number];
 export type TicketStatus = 'waiting' | 'called' | 'completed' | 'skipped'; // Added status
 
 export interface Ticket {
-  id?: string; // Optional: Firestore document ID
+  id: string; // Firestore document ID is now mandatory
   number: number;
   firstName: string;
   lastName: string;
   serviceType: ServiceType;
   status: TicketStatus; // Status of the ticket
-  timestamp: Date | Timestamp; // Allow both Date and Firestore Timestamp
+  // Timestamps are optional as they are set by the server
+  timestamp?: Date | Timestamp; // Allow both Date and Firestore Timestamp, mark as optional
   callTimestamp?: Date | Timestamp | null; // Optional: Time the ticket was called
   deskNumber?: number | null; // Optional: Desk number that called the ticket
 }
